@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"github.com/zaki2993/image-processing-service/internal/config"
 )
 func health(w http.ResponseWriter, r *http.Request){
 	response := map[string]string{
@@ -14,9 +15,11 @@ json.NewEncoder(w).Encode(response)
 }
 
 func main(){
+	confs := config.Load()
+	port := confs.Port
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health",health)
-	err := http.ListenAndServe(":8081",mux)
+	err := http.ListenAndServe(":"+port,mux)
 	if err != nil{
 		log.Fatal(err)
 	}
