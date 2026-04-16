@@ -17,9 +17,9 @@ func NewResizer(path string) (*Resizer, error) {
 	return &Resizer{StoragePath: path}, nil
 }
 
-func (r *Resizer) ProcessImage(imageBytes []byte,baseName string)(string,error){
+func (r *Resizer) ProcessImage(imageBytes []byte,variantName int,baseName string)(string,error){
 	options := bimg.Options{
-		Width: 800,
+		Width: variantName,
 		Type: bimg.WEBP,
 		Quality: 80,
 	}
@@ -27,7 +27,7 @@ func (r *Resizer) ProcessImage(imageBytes []byte,baseName string)(string,error){
 	if err != nil{
 		return "",err
 	}
-	filename := baseName + ".webp"
+	filename := fmt.Sprintf("%s_%d.webp",baseName,variantName)
 	imagePath := filepath.Join(r.StoragePath, filename)
 	err = os.WriteFile(imagePath,resizedImage,0644)
 	if err != nil {

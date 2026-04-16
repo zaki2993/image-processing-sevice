@@ -9,8 +9,8 @@ import (
 )
 
 func main(){
-	confs := config.Load()
-	port := confs.Port
+	confs := config.Load() 
+	port := confs.Port 
 	storagePath := confs.StoragePath
 	resizer,err := imgproc.NewResizer(storagePath)
 	if err != nil{
