@@ -1,27 +1,26 @@
 package main
 
 import (
-	"encoding/json"
 	"log"
 	"net/http"
 	"github.com/zaki2993/image-processing-service/internal/config"
+	"github.com/zaki2993/image-processing-service/internal/httpx"
+	"github.com/zaki2993/image-processing-service/internal/imgproc"
 )
-func health(w http.ResponseWriter, r *http.Request){
-	response := map[string]string{
-		"status":"ok",
-	}
-	w.Header().Set("Content-Type","application/json")
-json.NewEncoder(w).Encode(response)
-}
 
 func main(){
 	confs := config.Load()
 	port := confs.Port
-	mux := http.NewServeMux()
-	mux.HandleFunc("GET /health",health)
-	err := http.ListenAndServe(":"+port,mux)
+	storagePath := confs.StoragePath
+	resizer,err := imgproc.NewResizer(storagePath)
 	if err != nil{
 		log.Fatal(err)
 	}
-
+	handler := imgproc.NewHandler(resizer)
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /health",httpx.Health)
+	mux.HandleFunc("POST /resize",handler.Resize)
+	if err := http.ListenAndServe(":"+port,mux); err != nil {
+		log.Fatal(err)
+	}
 }

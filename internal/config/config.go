@@ -15,7 +15,7 @@ func getEnv(key ,fullback string) string{
 
 func Load() Configs{
 	port := getEnv("PORT_GO","8081")
-	storagepath := getEnv("STORAGE_PATH_GO","~/storage")
+	storagepath := getEnv("STORAGE_PATH_GO","/home/zakarch/storage")
 	return Configs{
 		Port: port,
 		StoragePath: storagepath,
