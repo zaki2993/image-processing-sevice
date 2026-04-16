@@ -20,7 +20,7 @@ func main(){
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health",httpx.Health)
 	mux.HandleFunc("POST /resize",handler.Resize)
-	if err := http.ListenAndServe(":"+port,mux); err != nil {
+	if err := http.ListenAndServe(":"+port,httpx.Recovery(httpx.Logging(mux))); err != nil {
 		log.Fatal(err)
 	}
 }
