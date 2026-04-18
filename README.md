@@ -61,6 +61,37 @@ Both services read/write the same storage directory. Laravel's `php artisan stor
 - Go 1.22+
 - libvips
 
+### Install Go
+
+Arch Linux:
+```bash
+sudo pacman -S go
+```
+
+Ubuntu/Debian:
+```bash
+sudo apt install golang
+```
+
+Fedora:
+```bash
+sudo dnf install golang
+```
+
+If your package manager provides an older version (below 1.22), install manually from [go.dev/dl](https://go.dev/dl):
+```bash
+wget https://go.dev/dl/go1.24.2.linux-amd64.tar.gz
+sudo tar -C /usr/local -xzf go1.24.2.linux-amd64.tar.gz
+echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
+source ~/.bashrc
+```
+
+Verify:
+```bash
+go version
+# go version go1.24.2 linux/amd64
+```
+
 ### Install libvips
 
 Arch Linux:
@@ -71,6 +102,16 @@ sudo pacman -S libvips
 Ubuntu/Debian:
 ```bash
 sudo apt install libvips-dev
+```
+
+Fedora:
+```bash
+sudo dnf install vips-devel
+```
+
+Verify:
+```bash
+vips --version
 ```
 
 ---
