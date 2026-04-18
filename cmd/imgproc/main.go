@@ -1,10 +1,11 @@
 package main
 
 import (
-	"log"
-	"net/http"
-	"github.com/zaki2993/image-processing-service/internal/config"
-	"github.com/zaki2993/image-processing-service/internal/httpx"
+"log"
+"net/http"
+
+"github.com/zaki2993/image-processing-service/internal/config"
+"github.com/zaki2993/image-processing-service/internal/httpx"
 	"github.com/zaki2993/image-processing-service/internal/imgproc"
 )
 
@@ -20,6 +21,7 @@ func main(){
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health",httpx.Health)
 	mux.HandleFunc("POST /resize",handler.Resize)
+	log.Printf("listenning on :%s",port)
 	if err := http.ListenAndServe(":"+port,httpx.Recovery(httpx.Logging(mux))); err != nil {
 		log.Fatal(err)
 	}
