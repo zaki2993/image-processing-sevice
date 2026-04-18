@@ -11,6 +11,7 @@ Built as a companion service to the Laravel monolith. Laravel handles uploads an
 Laravel runs on PHP-FPM, which assigns one worker per request. Resizing images inside Laravel blocks that worker for the entire duration — under concurrent uploads, this starves unrelated requests.
 
 This Go service offloads image processing to a separate process that:
+
 - Uses libvips (C library), which is 3–6× faster than PHP's GD library
 - Generates all three variants in parallel using goroutines
 - Doesn't block any PHP-FPM workers
@@ -19,12 +20,12 @@ This Go service offloads image processing to a separate process that:
 
 Tested with 15 images, resizing each to 3 WebP variants (200px, 800px, 1600px):
 
-| Runner              | Time    | Notes                          |
-|---------------------|---------|--------------------------------|
-| Go + libvips (parallel) | 1.73s  | 3 variants generated concurrently |
-| Go + libvips (sequential) | 4.73s  | one at a time                  |
-| PHP + Imagick       | 11.39s  | sequential, single-threaded    |
-| PHP + GD            | —       | failed on some input formats   |
+| Runner                    | Time   | Notes                            |
+|---------------------------|--------|----------------------------------|
+| Go + libvips (parallel)   | 1.73s  | 3 variants generated concurrently |
+| Go + libvips (sequential) | 4.73s  | one at a time                    |
+| PHP + Imagick             | 11.39s | sequential, single-threaded      |
+| PHP + GD                  | —      | failed on some input formats     |
 
 ---
 
@@ -57,8 +58,8 @@ Both services read/write the same storage directory. Laravel's `php artisan stor
 
 ## Prerequisites
 
-- **Go 1.22+**
-- **libvips** (C library for image processing)
+- Go 1.22+
+- libvips
 
 ### Install libvips
 
@@ -76,61 +77,50 @@ sudo apt install libvips-dev
 
 ## Setup
 
-### 1. Clone the repository
+### 1. Clone and install dependencies
 
 ```bash
 git clone <repository-url>
 cd image-processing-service
-```
-
-### 2. Install Go dependencies
-
-```bash
 go mod download
 ```
 
-### 3. Configure environment variables
+### 2. Configure environment
 
-Copy the example file:
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env` or export the variables directly:
+Open `.env` and set your values:
 
-| Variable            | Description                                      | Default                  |
-|---------------------|--------------------------------------------------|--------------------------|
-| `IMGPROC_PORT`      | Port the service listens on                      | `8081`                   |
-| `IMGPROC_STORAGE_PATH` | Absolute path to the shared storage directory | `./storage/portfolios`   |
-
-**Important for Laravel integration:** `IMGPROC_STORAGE_PATH` must point to Laravel's public storage directory so both services share the same files:
-
-```bash
-export IMGPROC_STORAGE_PATH=/path/to/bricolink-laravel/storage/app/public/portfolios
-export IMGPROC_PORT=8081
+```env
+IMGPROC_PORT=8081
+IMGPROC_STORAGE_PATH=/home/yourname/path/to/bricolink-laravel/storage/app/public/portfolios
 ```
 
-The service creates the directory if it doesn't exist.
+| Variable               | Description                               | Default | Required |
+|------------------------|-------------------------------------------|---------|----------|
+| `IMGPROC_PORT`         | Port the service listens on               | `8081`  | No       |
+| `IMGPROC_STORAGE_PATH` | Absolute path to shared storage directory | —       | **Yes**  |
 
-### 4. Run the service
+`IMGPROC_STORAGE_PATH` must point to the Laravel project's public storage directory so both services share the same files. Each developer sets their own path. The service creates the directory if it doesn't exist. The service will refuse to start if this variable is not set.
+
+### 3. Run
 
 ```bash
 go run ./cmd/imgproc
 ```
 
-You should see:
 ```
-listening on :8081 (default prot if not changed)
+listening on :8081
 ```
 
-### 5. Verify it works
+### 4. Verify
 
 ```bash
-# Health check
 curl http://localhost:8081/health
 # {"status":"ok"}
 
-# Resize an image
 curl -X POST -F "image=@/path/to/photo.jpg" http://localhost:8081/resize
 # {"thumb":"uuid_thumb.webp","medium":"uuid_medium.webp","large":"uuid_large.webp"}
 ```
@@ -139,25 +129,21 @@ curl -X POST -F "image=@/path/to/photo.jpg" http://localhost:8081/resize
 
 ## API
 
-### `GET /health`
+### GET /health
 
 Returns service status.
 
-**Response:**
 ```json
 {"status": "ok"}
 ```
 
-### `POST /resize`
+### POST /resize
 
-Accepts an image file, generates three WebP variants, saves them to storage.
+Accepts an image, generates three WebP variants, saves to storage.
 
-**Request:**
-- Content-Type: `multipart/form-data`
-- Field name: `image`
-- Max file size: 10 MB
+**Request:** multipart/form-data, field name `image`, max 10 MB.
 
-**Success response (200):**
+**Success (200):**
 ```json
 {
   "thumb":  "64c7239f_thumb.webp",
@@ -166,21 +152,21 @@ Accepts an image file, generates three WebP variants, saves them to storage.
 }
 ```
 
-**Error responses:**
+**Errors:**
 
-| Status | Meaning                        |
-|--------|--------------------------------|
-| 400    | Missing image field or invalid upload |
-| 413    | File exceeds 10 MB             |
-| 500    | Resize or disk write failed    |
+| Status | Meaning                                |
+|--------|----------------------------------------|
+| 400    | Missing image field or invalid upload  |
+| 413    | File exceeds 10 MB                     |
+| 500    | Resize or disk write failed            |
 
-### Variant sizes
+**Variants:**
 
-| Variant | Width  | Use case                         |
-|---------|--------|----------------------------------|
-| thumb   | 200px  | Artisan cards in search results  |
-| medium  | 800px  | Portfolio grid on profile page   |
-| large   | 1600px | Full-size image view (lightbox)  |
+| Name   | Width  | Use case                        |
+|--------|--------|---------------------------------|
+| thumb  | 200px  | Artisan cards in search results |
+| medium | 800px  | Portfolio grid on profile page  |
+| large  | 1600px | Full-size image view (lightbox) |
 
 All variants: WebP format, quality 80, aspect ratio preserved.
 
@@ -188,7 +174,7 @@ All variants: WebP format, quality 80, aspect ratio preserved.
 
 ## Laravel Integration
 
-### 1. Add environment variable
+### 1. Environment
 
 In Laravel's `.env`:
 ```
@@ -202,9 +188,9 @@ In `config/services.php`:
 ],
 ```
 
-### 2. Create service class
+### 2. Service class
 
-`app/Services/ImageProcessor.php`:
+Create `app/Services/ImageProcessor.php`:
 ```php
 <?php
 
@@ -232,7 +218,7 @@ class ImageProcessor
 }
 ```
 
-### 3. Use in controller
+### 3. Controller
 
 ```php
 public function store(Request $request, ImageProcessor $imgproc)
@@ -252,20 +238,20 @@ public function store(Request $request, ImageProcessor $imgproc)
 }
 ```
 
-### 4. Display in Blade
+### 4. Blade templates
 
 ```html
-<!-- In search results (small) -->
+<!-- Search results -->
 <img src="{{ asset('storage/portfolios/' . $image->thumb_path) }}">
 
-<!-- In portfolio grid -->
+<!-- Portfolio grid -->
 <img src="{{ asset('storage/portfolios/' . $image->medium_path) }}">
 
-<!-- In lightbox / full view -->
+<!-- Full view -->
 <img src="{{ asset('storage/portfolios/' . $image->large_path) }}">
 ```
 
-### 5. Migration update
+### 5. Migration
 
 Add columns to `portfolio_images` table:
 ```php
@@ -295,15 +281,17 @@ image-processing-service/
 │       ├── resizer_test.go      # Tests
 │       └── testdata/
 │           └── test.jpg         # Test fixture
+├── .env.example
+├── .env                         # Your local config (gitignored)
+├── .gitignore
 ├── go.mod
 ├── go.sum
-├── .env.example
 └── README.md
 ```
 
 ---
 
-## Running Tests
+## Tests
 
 ```bash
 go test ./internal/imgproc/ -v
@@ -313,17 +301,27 @@ go test ./internal/imgproc/ -v
 
 ## Troubleshooting
 
+**"IMGPROC_STORAGE_PATH must be set"**
+Create `.env` from the example and set your Laravel storage path:
+```bash
+cp .env.example .env
+# edit .env, set IMGPROC_STORAGE_PATH
+```
+
+**"mkdir /path: permission denied"**
+You're running with the placeholder path from `.env.example`. Edit `.env` and replace `/path/to/...` with your actual Laravel project path.
+
 **VIPS-WARNING: unable to load vips-openslide.so**
-Harmless. Optional plugin for medical imaging. Suppress with:
+Harmless. Suppress with:
 ```bash
 VIPS_WARNING=0 go run ./cmd/imgproc
 ```
 
-**"Unsupported image format" on resize**
-The uploaded file isn't a valid image (or a format libvips doesn't handle). Supported: JPEG, PNG, WebP, TIFF, GIF.
-
-**Storage directory not created**
-Ensure `IMGPROC_STORAGE_PATH` is an absolute path (starts with `/`). Relative paths and `~` are resolved from the working directory, not the home directory.
+**"Unsupported image format"**
+The uploaded file isn't a valid image. Supported formats: JPEG, PNG, WebP, TIFF, GIF.
 
 **Connection refused from Laravel**
-The Go service must be running before Laravel tries to call it. Start with `go run ./cmd/imgproc` in a separate terminal.
+Start the Go service before Laravel tries to call it:
+```bash
+go run ./cmd/imgproc
+```
