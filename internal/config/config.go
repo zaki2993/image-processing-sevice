@@ -1,6 +1,9 @@
 package config
 
-import "os"
+import(
+	"log"
+	"os"
+)
 type Configs struct{
 	Port string
 	StoragePath string
@@ -13,11 +16,13 @@ func getEnv(key ,fullback string) string{
 	return fullback
 }
 
-func Load() Configs{
-	port := getEnv("PORT_GO","8081")
-	storagepath := getEnv("STORAGE_PATH_GO","/home/zakarch/storage")
-	return Configs{
-		Port: port,
-		StoragePath: storagepath,
-	}
+func Load() Configs {
+    storagePath := os.Getenv("IMGPROC_STORAGE_PATH")
+    if storagePath == "" {
+        log.Fatal("IMGPROC_STORAGE_PATH must be set")
+    }
+    return Configs{
+        Port:        getEnv("IMGPROC_PORT", "8081"),
+        StoragePath: storagePath,
+    }
 }

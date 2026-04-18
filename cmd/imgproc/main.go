@@ -3,13 +3,15 @@ package main
 import (
 "log"
 "net/http"
-
 "github.com/zaki2993/image-processing-service/internal/config"
 "github.com/zaki2993/image-processing-service/internal/httpx"
-	"github.com/zaki2993/image-processing-service/internal/imgproc"
+"github.com/zaki2993/image-processing-service/internal/imgproc"
+"github.com/joho/godotenv"
+
 )
 
 func main(){
+	godotenv.Load()
 	confs := config.Load() 
 	port := confs.Port 
 	storagePath := confs.StoragePath
