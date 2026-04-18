@@ -51,17 +51,17 @@ wg.Add(3)
 
 go func() {
     defer wg.Done()  
-    thumb, thumbErr = h.Resizer.ProcessImage(imageBytes, 200, unique)
+    thumb, thumbErr = h.Resizer.ProcessImage(imageBytes, "thumb", unique)
 }()
 
 go func() {
     defer wg.Done()
-    medium, mediumErr = h.Resizer.ProcessImage(imageBytes, 800, unique)
+    medium, mediumErr = h.Resizer.ProcessImage(imageBytes, "meduim", unique)
 }()
 
 go func() {
     defer wg.Done()
-    large, largeErr = h.Resizer.ProcessImage(imageBytes, 1600, unique)
+    large, largeErr = h.Resizer.ProcessImage(imageBytes, "large", unique)
 }()
 
 wg.Wait()  
