@@ -5,6 +5,7 @@ import (
 	"time"
 	"net/http"
 )
+// meddleware that handels time for all handlers
 func Logging(next http.Handler) http.Handler{
 	    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
         start := time.Now()
@@ -14,6 +15,7 @@ func Logging(next http.Handler) http.Handler{
 
 }
 
+// meddleware that handels unexpected errors for all handlers 
 func Recovery(next http.Handler) http.Handler {
     return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
         defer func() {

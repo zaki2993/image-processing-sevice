@@ -25,7 +25,6 @@ Tested with 15 images, resizing each to 3 WebP variants (200px, 800px, 1600px):
 | Go + libvips (parallel)   | 1.73s  | 3 variants generated concurrently |
 | Go + libvips (sequential) | 4.73s  | one at a time                    |
 | PHP + Imagick             | 11.39s | sequential, single-threaded      |
-| PHP + GD                  | —      | failed on some input formats     |
 
 ---
 
@@ -215,6 +214,8 @@ All variants: WebP format, quality 80, aspect ratio preserved.
 
 ## Laravel Integration
 
+Both services share a single storage directory: Laravel's `storage/app/public/portfolios/`. Set `IMGPROC_STORAGE_PATH` (in this service's `.env`) to that absolute path so the Go service writes where Laravel serves from. After cloning the Laravel project, run `php artisan storage:link` once to expose `storage/app/public/` as `public/storage/`.
+
 ### 1. Environment
 
 In Laravel's `.env`:
@@ -244,11 +245,13 @@ class ImageProcessor
 {
     public function process(UploadedFile $file): array
     {
-        $response = Http::attach(
-            'image',
-            file_get_contents($file->path()),
-            $file->getClientOriginalName()
-        )->post(config('services.imgproc.url') . '/resize');
+        $response = Http::timeout(30)
+            ->attach(
+                'image',
+                fopen($file->path(), 'r'),
+                $file->getClientOriginalName()
+            )
+            ->post(config('services.imgproc.url') . '/resize');
 
         if ($response->failed()) {
             throw new \RuntimeException('Image processing failed: ' . $response->body());
@@ -258,6 +261,8 @@ class ImageProcessor
     }
 }
 ```
+
+`fopen` streams the file instead of loading it into memory. `timeout(30)` prevents Laravel hanging if the Go service stalls.
 
 ### 3. Controller
 
@@ -279,6 +284,8 @@ public function store(Request $request, ImageProcessor $imgproc)
 }
 ```
 
+`max:10240` (KB) matches the Go service's 10 MB cap. Keep them in sync.
+
 ### 4. Blade templates
 
 ```html
@@ -294,8 +301,9 @@ public function store(Request $request, ImageProcessor $imgproc)
 
 ### 5. Migration
 
-Add columns to `portfolio_images` table:
+Add columns to `portfolio_images`:
 ```php
+$table->foreignId('artisan_id')->constrained()->cascadeOnDelete();
 $table->string('thumb_path');
 $table->string('medium_path');
 $table->string('large_path');
