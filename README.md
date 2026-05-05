@@ -157,6 +157,12 @@ listening on :8081
 
 ### 4. Verify
 
+Run unit tests (uses a fixture image, no service needed):
+```bash
+go test ./internal/imgproc/ -v
+```
+
+Then start the service and test against a real image upload over HTTP:
 ```bash
 curl http://localhost:8081/health
 # {"status":"ok"}
@@ -164,7 +170,6 @@ curl http://localhost:8081/health
 curl -X POST -F "image=@/path/to/photo.jpg" http://localhost:8081/resize
 # {"thumb":"uuid_thumb.webp","medium":"uuid_medium.webp","large":"uuid_large.webp"}
 ```
-
 ---
 
 ## API
@@ -340,13 +345,6 @@ image-processing-service/
 
 ---
 
-## Tests
-
-```bash
-go test ./internal/imgproc/ -v
-```
-
----
 
 ## Troubleshooting
 
